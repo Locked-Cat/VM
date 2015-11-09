@@ -23,6 +23,7 @@ namespace VM
         public MainWindow()
         {
             InitializeComponent();
+            screen.Poke(0xa000, 65);
         }
     }
 }

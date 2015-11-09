@@ -5,6 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VM"
         mc:Ignorable="d"
-        Name="mainWindow" Title="VM" Height="350" Width="525">
-    <local:VMScreen Width="{Binding ElementName=mainWindow, Path=Width}" Height="{Binding ElementName=mainWindow, Path=Height}"></local:VMScreen>
+        Name="mainWindow" Title="VM" Width="640"  Height="275">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0">
+            <MenuItem Header="File">
+                <MenuItem Header="Open" Height="Auto"></MenuItem>
+                <Separator></Separator>
+                <MenuItem Header="Exit" Height="Auto"></MenuItem>
+            </MenuItem>
+        </Menu>
+        <local:VMScreen x:Name="screen" Width="640" Height="275" Grid.Row="1"></local:VMScreen>
+    </Grid>
 </Window>

@@ -89,13 +89,16 @@ namespace VM
             return screenMemory[memoryLoacation];
         }
 
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
+
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
 
-            var bitmap = new Bitmap((int)this.Width, (int)this.Height);
+            var bitmap = new Bitmap(640, 275);
             var bitmapGraphics = Graphics.FromImage(bitmap);
-            var font = new Font("Courier New", 10f, System.Drawing.FontStyle.Regular);
+            var font = new Font("Courier New", 10f, System.Drawing.FontStyle.Bold);
             var xLoc = 0;
             var yLoc = 0;
 
@@ -216,20 +219,23 @@ namespace VM
 
                 if ((xLoc % 640) == 0 && (xLoc != 0))
                 {
-                    yLoc += 1;
+                    yLoc += 11;
                     xLoc = 0;
                 }
 
                 var s = System.Text.Encoding.ASCII.GetString(screenMemory, i, 1);
                 var pf = new PointF(xLoc, yLoc);
 
-                bitmapGraphics.FillRectangle(backgroundBrush, xLoc + 2, yLoc + 2, 8f, 11f);
+                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 8f, 11f);
                 bitmapGraphics.DrawString(s, font, foregroundBrush, pf);
                 xLoc += 8;
             }
-            drawingContext.DrawBrush
+            var hBitmap = bitmap.GetHbitmap();
+            var bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            screenBitmap.Source = bitmapSource;
             bitmapGraphics.Dispose();
             bitmap.Dispose();
+            DeleteObject(hBitmap);
         }
     }
 }
