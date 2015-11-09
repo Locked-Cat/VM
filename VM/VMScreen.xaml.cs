@@ -25,6 +25,12 @@ namespace VM
         private ushort screenMemoryLocation;
         private byte[] screenMemory;
 
+        public ushort ScreenWidth
+        { get; } = 640;
+
+        public ushort ScreenHeight
+        { get; } = 400;
+
         public ushort ScreenMemoryLocation
         {
             get
@@ -96,9 +102,9 @@ namespace VM
         {
             base.OnRender(drawingContext);
 
-            var bitmap = new Bitmap(640, 275);
+            var bitmap = new Bitmap(ScreenWidth, ScreenHeight);
             var bitmapGraphics = Graphics.FromImage(bitmap);
-            var font = new Font("Courier New", 10f, System.Drawing.FontStyle.Bold);
+            var font = new Font("Consolas", 8f, System.Drawing.FontStyle.Bold);
             var xLoc = 0;
             var yLoc = 0;
 
@@ -219,14 +225,14 @@ namespace VM
 
                 if ((xLoc % 640) == 0 && (xLoc != 0))
                 {
-                    yLoc += 11;
+                    yLoc += 18;
                     xLoc = 0;
                 }
 
                 var s = System.Text.Encoding.ASCII.GetString(screenMemory, i, 1);
                 var pf = new PointF(xLoc, yLoc);
 
-                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 8f, 11f);
+                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 8f, 14f);
                 bitmapGraphics.DrawString(s, font, foregroundBrush, pf);
                 xLoc += 8;
             }

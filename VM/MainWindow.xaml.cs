@@ -24,6 +24,11 @@ namespace VM
         {
             InitializeComponent();
             screen.Poke(0xa000, 65);
+            screen.Poke(0xa001, Convert.ToByte("00011111", 2));
+            screen.Poke(0xa002, 66);
+            screen.Poke(0xa003, Convert.ToByte("01001111", 2));
+            screen.Poke(0xa004, 67);
+            screen.Poke(0xa005, Convert.ToByte("00101111", 2));
         }
     }
 }
