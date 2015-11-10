@@ -29,7 +29,7 @@ namespace VM
         { get; } = 640;
 
         public ushort ScreenHeight
-        { get; } = 400;
+        { get; } = 350;
 
         public ushort ScreenMemoryLocation
         {
@@ -225,7 +225,7 @@ namespace VM
 
                 if ((xLoc % 640) == 0 && (xLoc != 0))
                 {
-                    yLoc += 18;
+                    yLoc += 14;
                     xLoc = 0;
                 }
 

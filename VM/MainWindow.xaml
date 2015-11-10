@@ -10,14 +10,19 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
         <Menu Grid.Row="0">
-            <MenuItem Header="File">
-                <MenuItem Header="Open" Height="Auto"></MenuItem>
+            <MenuItem Header="_File">
+                <MenuItem Name="openMenuItem"  Header="_Open" Height="Auto" Click="openMenuItem_Click"></MenuItem>
                 <Separator></Separator>
-                <MenuItem Header="Exit" Height="Auto"></MenuItem>
+                <MenuItem Name="exitMenuItem" Header="E_xit" Height="Auto" Click="exitMenuItem_Click"></MenuItem>
             </MenuItem>
         </Menu>
-        <local:VMScreen x:Name="screen" Width="640" Height="400" Grid.Row="1"></local:VMScreen>
+        <local:VMScreen x:Name="screen" Width="640" Height="350" Grid.Row="1"></local:VMScreen>
+        <StackPanel Orientation="Horizontal" Grid.Row="2">
+            <Label Height="Auto" Content="Register Status:" HorizontalContentAlignment="Left"></Label>
+            <Label Name="registerStatusLabel" Height="Auto" HorizontalContentAlignment="Left"></Label>
+        </StackPanel>
     </Grid>
 </Window>
