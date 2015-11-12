@@ -57,10 +57,20 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="VMScreen.xaml.cs">
-      <DependentUpon>VMScreen.xaml</DependentUpon>
+    <Compile Include="VM_CPU.xaml.cs">
+      <DependentUpon>VM_CPU.xaml</DependentUpon>
     </Compile>
-    <Page Include="MainWindow.xaml">
+    <Compile Include="VM_Memory.xaml.cs">
+      <DependentUpon>VM_Memory.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="VM_Screen.xaml.cs">
+      <DependentUpon>VM_Screen.xaml</DependentUpon>
+    </Compile>
+    <Page Include="VM_CPU.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="VM_Machine.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -68,11 +78,15 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="VM_Machine.xaml.cs">
+      <DependentUpon>VM_Machine.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="VMScreen.xaml">
+    <Page Include="VM_Memory.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="VM_Screen.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

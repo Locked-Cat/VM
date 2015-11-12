@@ -13,86 +13,48 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace VM
 {
     /// <summary>
-    /// VMScreen.xaml 的交互逻辑
+    /// VM_Screen.xaml 的交互逻辑
     /// </summary>
 
-    public partial class VMScreen : UserControl
+    public partial class VM_Screen : UserControl
     {
-        private ushort screenMemoryLocation;
-        private byte[] screenMemory;
+        static public ushort CharsXAxis
+        { get; } = 80;
 
-        public ushort ScreenWidth
-        { get; } = 640;
+        static public ushort CharsYAxis
+        { get; } = 60;
 
-        public ushort ScreenHeight
-        { get; } = 350;
+        static public ushort ScreenWidth
+        { get; } = (ushort)(CharsXAxis * 10);
 
-        public ushort ScreenMemoryLocation
-        {
-            get
-            {
-                return screenMemoryLocation;
-            }
-            set
-            {
-                ScreenMemoryLocation = value;
-            }
-        }
+        static public ushort ScreenHeight
+        { get; } = (ushort)(CharsYAxis * 10);
 
-        public VMScreen()
+        private VM_Memory memory;
+
+        public VM_Screen()
         {
             InitializeComponent();
-            screenMemoryLocation = 0xa000;
-            screenMemory = new byte[4000];
-
-            for (var i = 0; i < 4000; i += 2)
-            {
-                screenMemory[i] = 32;
-                screenMemory[i + 1] = 7;
-            }
         }
 
-        public void Poke(ushort address, byte value)
+        public void InitializeVideoMemory(VM_Memory memory)
         {
-            ushort memoryLocation;
-
-            try
+            Debug.Assert(memory != null);
+            if (this.memory == null)        //called for only once
             {
-                memoryLocation = (ushort)(address - screenMemoryLocation);
+                this.memory = memory;
+
+                for (var i = VM_Memory.VideoMemoryStartAddr; i < VM_Memory.VideoMemoryStartAddr + VM_Memory.VideoMemorySize; i += 2)
+                {
+                    this.memory[i] = 32;
+                    this.memory[(UInt16)(i + 1)] = 7;
+                }
             }
-            catch (Exception)
-            {
-                return;
-            }
-
-            if (memoryLocation < 0 || memoryLocation > 3999)
-                return;
-
-            screenMemory[memoryLocation] = value;
-            InvalidateVisual();
-        }
-
-        public byte Peek(ushort address)
-        {
-            ushort memoryLoacation;
-
-            try
-            {
-                memoryLoacation = (ushort)(address - screenMemoryLocation);
-            }
-            catch (Exception)
-            {
-                return (byte)0;
-            }
-
-            if (memoryLoacation < 0 || memoryLoacation > 3999)
-                return (byte)0;
-
-            return screenMemory[memoryLoacation];
         }
 
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
@@ -100,39 +62,41 @@ namespace VM
 
         protected override void OnRender(DrawingContext drawingContext)
         {
+            Debug.Assert(memory != null);
+
             base.OnRender(drawingContext);
 
             var bitmap = new Bitmap(ScreenWidth, ScreenHeight);
             var bitmapGraphics = Graphics.FromImage(bitmap);
-            var font = new Font("Consolas", 8f, System.Drawing.FontStyle.Bold);
+            var font = new Font("Consolas", 10f, System.Drawing.FontStyle.Bold);
             var xLoc = 0;
             var yLoc = 0;
 
-            for (var i = 0; i < 4000; i += 2)
+            for (var i = VM_Memory.VideoMemoryStartAddr; i < VM_Memory.VideoMemoryStartAddr + VM_Memory.VideoMemorySize; i += 2)
             {
                 SolidBrush backgroundBrush = null;
                 SolidBrush foregroundBrush = null;
 
-                if ((screenMemory[i + 1] & 112) == 112)
+                if ((memory[(UInt16)(i + 1)] & 112) == 112)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Gray);
-                if ((screenMemory[i + 1] & 112) == 96)
+                if ((memory[(UInt16)(i + 1)] & 112) == 96)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Brown);
-                if ((screenMemory[i + 1] & 112) == 80)
+                if ((memory[(UInt16)(i + 1)] & 112) == 80)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Magenta);
-                if ((screenMemory[i + 1] & 112) == 64)
+                if ((memory[(UInt16)(i + 1)] & 112) == 64)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Red);
-                if ((screenMemory[i + 1] & 112) == 48)
+                if ((memory[(UInt16)(i + 1)] & 112) == 48)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Cyan);
-                if ((screenMemory[i + 1] & 112) == 32)
+                if ((memory[(UInt16)(i + 1)] & 112) == 32)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Green);
-                if ((screenMemory[i + 1] & 112) == 16)
+                if ((memory[(UInt16)(i + 1)] & 112) == 16)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Blue);
-                if ((screenMemory[i + 1] & 112) == 0)
+                if ((memory[(UInt16)(i + 1)] & 112) == 0)
                     backgroundBrush = new SolidBrush(System.Drawing.Color.Black);
 
-                if ((screenMemory[i + 1] & 7) == 0)
+                if ((memory[(UInt16)(i + 1)] & 7) == 0)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Gray);
                     }
@@ -141,9 +105,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Black);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 1)
+                if ((memory[(UInt16)(i + 1)] & 7) == 1)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.LightBlue);
                     }
@@ -152,9 +116,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Blue);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 2)
+                if ((memory[(UInt16)(i + 1)] & 7) == 2)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.LightGreen);
                     }
@@ -163,9 +127,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Green);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 3)
+                if ((memory[(UInt16)(i + 1)] & 7) == 3)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.LightCyan);
                     }
@@ -174,9 +138,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Cyan);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 4)
+                if ((memory[(UInt16)(i + 1)] & 7) == 4)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Pink);
                     }
@@ -185,9 +149,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Red);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 5)
+                if ((memory[(UInt16)(i + 1)] & 7) == 5)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Fuchsia);
                     }
@@ -196,9 +160,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Magenta);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 6)
+                if ((memory[(UInt16)(i + 1)] & 7) == 6)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Yellow);
                     }
@@ -207,9 +171,9 @@ namespace VM
                         foregroundBrush = new SolidBrush(System.Drawing.Color.Brown);
                     }
                 }
-                if ((screenMemory[i + 1] & 7) == 7)
+                if ((memory[(UInt16)(i + 1)] & 7) == 7)
                 {
-                    if ((screenMemory[i + 1] & 8) == 8)
+                    if ((memory[(UInt16)(i + 1)] & 8) == 8)
                     {
                         foregroundBrush = new SolidBrush(System.Drawing.Color.White);
                     }
@@ -223,19 +187,21 @@ namespace VM
                 if (foregroundBrush == null)
                     foregroundBrush = new SolidBrush(System.Drawing.Color.Gray);
 
-                if ((xLoc % 640) == 0 && (xLoc != 0))
+                if ((xLoc % 800) == 0 && (xLoc != 0))
                 {
-                    yLoc += 14;
+                    yLoc += 10;
                     xLoc = 0;
                 }
 
-                var s = System.Text.Encoding.ASCII.GetString(screenMemory, i, 1);
+                byte[] letter = { memory[i] };
+                var s = System.Text.Encoding.ASCII.GetString(letter);
                 var pf = new PointF(xLoc, yLoc);
 
-                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 8f, 14f);
+                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 10f, 10f);
                 bitmapGraphics.DrawString(s, font, foregroundBrush, pf);
-                xLoc += 8;
+                xLoc += 10;
             }
+
             var hBitmap = bitmap.GetHbitmap();
             var bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             screenBitmap.Source = bitmapSource;
