@@ -103,7 +103,11 @@ namespace VM
 
         public void BindingMemory(VM_Memory memory)
         {
-            this.memory = memory;
+            if (this.memory == null)
+            {
+                Debug.Assert(memory != null);
+                this.memory = memory;
+            }
         }
 
         public void InitializeRegister()
