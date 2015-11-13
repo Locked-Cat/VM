@@ -5,8 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:VM"
              mc:Ignorable="d" 
-             d:DesignWidth="800" d:DesignHeight="600">
+             d:DesignWidth="960" d:DesignHeight="840">
     <Canvas>
-        <Image Name="screenBitmap" Width="800" Height="600" Canvas.Left="0" Canvas.Top="0"></Image>
+        <Image Name="screenBitmap" Width="960" Height="840" Canvas.Left="0" Canvas.Top="0"></Image>
     </Canvas>
 </UserControl>

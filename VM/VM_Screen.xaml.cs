@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Drawing;
 using System.Diagnostics;
 
@@ -30,10 +21,10 @@ namespace VM
         { get; } = 60;
 
         static public ushort ScreenWidth
-        { get; } = (ushort)(CharsXAxis * 10);
+        { get; } = (ushort)(CharsXAxis * 12);
 
         static public ushort ScreenHeight
-        { get; } = (ushort)(CharsYAxis * 10);
+        { get; } = (ushort)(CharsYAxis * 14);
 
         private VM_Memory memory;
 
@@ -62,13 +53,14 @@ namespace VM
 
         protected override void OnRender(DrawingContext drawingContext)
         {
-            Debug.Assert(memory != null);
-
             base.OnRender(drawingContext);
+
+            if (memory == null)
+                return;
 
             var bitmap = new Bitmap(ScreenWidth, ScreenHeight);
             var bitmapGraphics = Graphics.FromImage(bitmap);
-            var font = new Font("Consolas", 10f, System.Drawing.FontStyle.Bold);
+            var font = new Font("Consolas", 15f, System.Drawing.FontStyle.Bold);
             var xLoc = 0;
             var yLoc = 0;
 
@@ -187,19 +179,19 @@ namespace VM
                 if (foregroundBrush == null)
                     foregroundBrush = new SolidBrush(System.Drawing.Color.Gray);
 
-                if ((xLoc % 800) == 0 && (xLoc != 0))
+                if ((xLoc % 960) == 0 && (xLoc != 0))
                 {
-                    yLoc += 10;
+                    yLoc += 14;
                     xLoc = 0;
                 }
 
                 byte[] letter = { memory[i] };
                 var s = System.Text.Encoding.ASCII.GetString(letter);
-                var pf = new PointF(xLoc, yLoc);
+                var pf = new PointF(xLoc - 2, yLoc - 4);
 
-                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 10f, 10f);
+                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 12f, 14f);
                 bitmapGraphics.DrawString(s, font, foregroundBrush, pf);
-                xLoc += 10;
+                xLoc += 12;
             }
 
             var hBitmap = bitmap.GetHbitmap();

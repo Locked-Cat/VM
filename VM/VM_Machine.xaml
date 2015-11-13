@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VM"
         mc:Ignorable="d"
-        Name="VM" Title="VM" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+        Name="VM" Title="VM" SizeToContent="WidthAndHeight" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
@@ -19,11 +19,11 @@
                 <MenuItem Name="exitMenuItem" Header="E_xit" Height="Auto" Click="exitMenuItem_Click"></MenuItem>
             </MenuItem>
         </Menu>
-        <local:VM_Screen x:Name="screen" Width="800"  Height="600" Grid.Row="1"></local:VM_Screen>
+        <local:VM_Screen x:Name="screen" Width="960"  Height="840" Grid.Row="1"></local:VM_Screen>
         <local:VM_Memory x:Name="memory" Grid.Row="1"></local:VM_Memory>
         <local:VM_CPU x:Name="cpu" Grid.Row="1"></local:VM_CPU>
         <StackPanel Orientation="Horizontal" Grid.Row="2">
-            <Label Height="Auto" Content="Register Status:" HorizontalContentAlignment="Left"></Label>
+            <Label Height="Auto" Content="Register Status:"></Label>
             <Label Name="registerStatusLabel" Height="Auto" HorizontalContentAlignment="Left"></Label>
         </StackPanel>
     </Grid>
