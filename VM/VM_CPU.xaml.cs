@@ -82,13 +82,17 @@ namespace VM
             set;
         }
 
-        public byte flags
+        public byte Flags
         {
             get;
             set;
         }
 
-        private UInt16 instructionPointer;
+        public UInt16 InstructionPointer
+        {
+            get;
+            set;
+        }
 
         private VM_Memory memory;
 
@@ -110,58 +114,57 @@ namespace VM
         {
             AH = AL = 0;
             A = B = C = D = 0;
-            flags = 0;
-            instructionPointer = 0;
+            Flags = 0;
+            InstructionPointer = 0;
             RegisterStatusUpdateEvent(this, EventArgs.Empty);
         }
 
-        public void ExecuteProgram(UInt16 programPosition, UInt16 programLength)
+        public void ExecuteProgram(UInt16 programPosition)
         {
             Debug.Assert(memory != null);
 
-            instructionPointer = programPosition;
-            while (programLength > 0)
+            InstructionPointer = programPosition;
+            bool isProgramEnd = false;
+
+            while (!isProgramEnd)
             {
-                var instruction = memory[instructionPointer];
-                --programLength;
-                ++instructionPointer;
+                var instruction = memory[InstructionPointer];
+                ++InstructionPointer;
 
                 switch (instruction)
                 {
                     case 0x01:      //LDT R VALUE
                         {
-                            var registerID = (Register)memory[instructionPointer];
-                            var bytes = new byte[] { memory[(UInt16)(instructionPointer + 1)], memory[(UInt16)(instructionPointer + 2)] };
+                            var registerID = (Register)memory[InstructionPointer];
+                            var bytes = new byte[] { memory[(UInt16)(InstructionPointer + 1)], memory[(UInt16)(InstructionPointer + 2)] };
                             var fromAddress = System.BitConverter.ToUInt16(bytes, 0);
-                            instructionPointer += 3;
-                            programLength -= 3;
+                            InstructionPointer += 3;
                             MemoryToRegister(registerID, fromAddress);
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x02:      //STT VALUE R
                         {
-                            var bytes = new byte[] { memory[(UInt16)(instructionPointer)], memory[(UInt16)(instructionPointer + 1)] };
+                            var bytes = new byte[] { memory[(UInt16)(InstructionPointer)], memory[(UInt16)(InstructionPointer + 1)] };
                             var toAddress = System.BitConverter.ToUInt16(bytes, 0);
-                            var registerID = (Register)memory[(UInt16)(instructionPointer + 2)];
-                            instructionPointer += 3;
-                            programLength -= 3;
+                            var registerID = (Register)memory[(UInt16)(InstructionPointer + 2)];
+                            InstructionPointer += 3;
                             RegisterToMemory(registerID, toAddress);
                             break;
                         }
                     case 0x03:      //SET R VALUE
                         {
-                            var registerID = (Register)memory[instructionPointer];
+                            var registerID = (Register)memory[InstructionPointer];
                             if (registerID == Register.AH || registerID == Register.AL)
                             {
                                 if (registerID == Register.AH)
-                                    AH = (memory[(UInt16)(instructionPointer + 1)]);
+                                    AH = (memory[(UInt16)(InstructionPointer + 1)]);
                                 else
-                                    AL = (memory[(UInt16)(instructionPointer + 1)]);
+                                    AL = (memory[(UInt16)(InstructionPointer + 1)]);
                             }
                             else
                             {
-                                var bytes = new byte[] { memory[(UInt16)(instructionPointer + 1)], memory[(UInt16)(instructionPointer + 2)] };
+                                var bytes = new byte[] { memory[(UInt16)(InstructionPointer + 1)], memory[(UInt16)(InstructionPointer + 2)] };
                                 var value = System.BitConverter.ToUInt16(bytes, 0);
                                 switch (registerID)
                                 {
@@ -179,39 +182,37 @@ namespace VM
                                         break;
                                 }
                             }
-                            instructionPointer += 3;
-                            programLength -= 3;
+                            InstructionPointer += 3;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x04:      //END ADDR
-                        instructionPointer += 2;
-                        programLength -= 2;
+                        InstructionPointer += 2;
+                        isProgramEnd = true;
                         break;
                     case 0x0c:      //CMP V V
                         {
-                            var leftValue = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
-                            var rightValue = System.BitConverter.ToUInt16(memory.Segment((UInt16)(instructionPointer + 2), (UInt16)(instructionPointer + 4)), 0);
+                            var leftValue = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            var rightValue = System.BitConverter.ToUInt16(memory.Segment((UInt16)(InstructionPointer + 2), (UInt16)(InstructionPointer + 4)), 0);
 
-                            flags = 0;
+                            Flags = 0;
                             if (leftValue == rightValue)
-                                flags = (byte)(flags | 1);
+                                Flags = (byte)(Flags | 1);
                             if (leftValue != rightValue)
-                                flags = (byte)(flags | 2);
+                                Flags = (byte)(Flags | 2);
                             if (leftValue > rightValue)
-                                flags = (byte)(flags | 4);
+                                Flags = (byte)(Flags | 4);
                             if (leftValue < rightValue)
-                                flags = (byte)(flags | 8);
+                                Flags = (byte)(Flags | 8);
 
-                            instructionPointer += 4;
-                            programLength -= 4;
+                            InstructionPointer += 4;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x0d:      //CMP V R
                         {
-                            var leftValue = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
-                            var registerID = (Register)memory[(UInt16)(instructionPointer + 2)];
+                            var leftValue = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            var registerID = (Register)memory[(UInt16)(InstructionPointer + 2)];
 
                             UInt16 rightValue = 0;
                             switch (registerID)
@@ -236,25 +237,24 @@ namespace VM
                                     break;
                             }
 
-                            flags = 0;
+                            Flags = 0;
                             if (leftValue == rightValue)
-                                flags = (byte)(flags | 1);
+                                Flags = (byte)(Flags | 1);
                             if (leftValue != rightValue)
-                                flags = (byte)(flags | 2);
+                                Flags = (byte)(Flags | 2);
                             if (leftValue > rightValue)
-                                flags = (byte)(flags | 4);
+                                Flags = (byte)(Flags | 4);
                             if (leftValue < rightValue)
-                                flags = (byte)(flags | 8);
+                                Flags = (byte)(Flags | 8);
 
-                            instructionPointer += 3;
-                            programLength -= 3;
+                            InstructionPointer += 3;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x0e:      //CMP R V
                         {
-                            var registerID = (Register)memory[(UInt16)(instructionPointer + 2)];
-                            var rightValue = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0); ;
+                            var registerID = (Register)memory[(UInt16)(InstructionPointer + 2)];
+                            var rightValue = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0); ;
 
                             UInt16 leftValue = 0;
                             switch (registerID)
@@ -279,25 +279,24 @@ namespace VM
                                     break;
                             }
 
-                            flags = 0;
+                            Flags = 0;
                             if (leftValue == rightValue)
-                                flags = (byte)(flags | 1);
+                                Flags = (byte)(Flags | 1);
                             if (leftValue != rightValue)
-                                flags = (byte)(flags | 2);
+                                Flags = (byte)(Flags | 2);
                             if (leftValue > rightValue)
-                                flags = (byte)(flags | 4);
+                                Flags = (byte)(Flags | 4);
                             if (leftValue < rightValue)
-                                flags = (byte)(flags | 8);
+                                Flags = (byte)(Flags | 8);
 
-                            instructionPointer += 3;
-                            programLength -= 3;
+                            InstructionPointer += 3;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x0f:      //CMP R R
                         {
-                            var leftRegisterID = (Register)memory[instructionPointer];
-                            var rightRegisterID = (Register)memory[(UInt16)(instructionPointer + 1)];
+                            var leftRegisterID = (Register)memory[InstructionPointer];
+                            var rightRegisterID = (Register)memory[(UInt16)(InstructionPointer + 1)];
 
                             UInt16 leftValue = 0;
                             UInt16 rightValue = 0;
@@ -346,106 +345,138 @@ namespace VM
                                     break;
                             }
 
-                            flags = 0;
+                            Flags = 0;
                             if (leftValue == rightValue)
-                                flags = (byte)(flags | 1);
+                                Flags = (byte)(Flags | 1);
                             if (leftValue != rightValue)
-                                flags = (byte)(flags | 2);
+                                Flags = (byte)(Flags | 2);
                             if (leftValue > rightValue)
-                                flags = (byte)(flags | 4);
+                                Flags = (byte)(Flags | 4);
                             if (leftValue < rightValue)
-                                flags = (byte)(flags | 8);
+                                Flags = (byte)(Flags | 8);
 
-                            instructionPointer += 4;
-                            programLength -= 4;
+                            InstructionPointer += 4;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x05:      //JMP ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
 
-                            instructionPointer = addr;
-                            programLength -= 3;
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
+                            if (addr >= 0)
+                                InstructionPointer += absAddr;
+                            else
+                                InstructionPointer -= absAddr;
+
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x06:      //JLE ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
 
-                            if ((flags & 8) == 8 || (flags & 1) == 1)
-                                instructionPointer = addr;
+                            if ((Flags & 8) == 8 || (Flags & 1) == 1)
+                            {
+                                if (addr >= 0)
+                                    InstructionPointer += absAddr;
+                                else
+                                    InstructionPointer -= absAddr;
+                            }
                             else
-                                instructionPointer += 2;
+                                InstructionPointer += 2;
 
-                            programLength -= 2;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x07:      //JL ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
 
-                            if ((flags & 8) == 8)
-                                instructionPointer = addr;
+                            if ((Flags & 8) == 8)
+                            {
+                                if (addr >= 0)
+                                    InstructionPointer += absAddr;
+                                else
+                                    InstructionPointer -= absAddr;
+                            }
                             else
-                                instructionPointer += 2;
+                                InstructionPointer += 2;
 
-                            programLength -= 2;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x08:      //JGE ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
 
-                            if ((flags & 4) == 4 || (flags & 1) == 1)
-                                instructionPointer = addr;
+                            if ((Flags & 4) == 4 || (Flags & 1) == 1)
+                            {
+                                if (addr >= 0)
+                                    InstructionPointer += absAddr;
+                                else
+                                    InstructionPointer -= absAddr;
+                            }
                             else
-                                instructionPointer += 2;
+                                InstructionPointer += 2;
 
-                            programLength -= 2;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x09:      //JG ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
 
-                            if ((flags & 4) == 4)
-                                instructionPointer = addr;
+                            if ((Flags & 4) == 4)
+                            {
+                                if (addr >= 0)
+                                    InstructionPointer += absAddr;
+                                else
+                                    InstructionPointer -= absAddr;
+                            }
                             else
-                                instructionPointer += 2;
+                                InstructionPointer += 2;
 
-                            programLength -= 2;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x0a:      //JE ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
 
-
-                            if ((flags & 1) == 1)
-                                instructionPointer = addr;
+                            if ((Flags & 1) == 1)
+                            {
+                                if (addr >= 0)
+                                    InstructionPointer += absAddr;
+                                else
+                                    InstructionPointer -= absAddr;
+                            }
                             else
-                                instructionPointer += 2;
+                                InstructionPointer += 2;
 
-                            programLength -= 2;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
                     case 0x0b:      //JNE ADDR
                         {
-                            var addr = System.BitConverter.ToUInt16(memory.Segment(instructionPointer, (UInt16)(instructionPointer + 2)), 0);
+                            var addr = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
+                            UInt16 absAddr = (UInt16)System.Math.Abs(addr);
 
-                            if ((flags & 2) == 2)
-                                instructionPointer = addr;
+                            if ((Flags & 2) == 2)
+                            {
+                                if (addr >= 0)
+                                    InstructionPointer += absAddr;
+                                else
+                                    InstructionPointer -= absAddr;
+                            }
                             else
-                                instructionPointer += 2;
+                                InstructionPointer += 2;
 
-                            programLength -= 2;
                             RegisterStatusUpdateEvent(this, EventArgs.Empty);
                             break;
                         }
