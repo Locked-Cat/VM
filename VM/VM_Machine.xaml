@@ -11,20 +11,66 @@
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
-        <Menu Grid.Row="0">
-            <MenuItem Header="_File">
-                <MenuItem Name="openMenuItem"  Header="_Open" Height="Auto" Click="openMenuItem_Click"></MenuItem>
-                <Separator></Separator>
-                <MenuItem Name="exitMenuItem" Header="E_xit" Height="Auto" Click="exitMenuItem_Click"></MenuItem>
-            </MenuItem>
-        </Menu>
-        <local:VM_Screen x:Name="screen" Width="960"  Height="840" Grid.Row="1"></local:VM_Screen>
+        <Border BorderThickness="1" BorderBrush="White" Grid.Row="0">
+            <Menu>
+                <MenuItem Header="_File">
+                    <MenuItem Name="openMenuItem"  Header="_Open" Height="Auto" Click="openMenuItem_Click"></MenuItem>
+                    <Separator></Separator>
+                    <MenuItem Name="exitMenuItem" Header="E_xit" Height="Auto" Click="exitMenuItem_Click"></MenuItem>
+                </MenuItem>
+                <MenuItem Header="_Settings">
+                    <MenuItem Header="CPU Speed(For Debug)">
+                        <MenuItem Name="speed0_25HzMenuItem" IsCheckable="True" Header="0.25 Hz" Checked="speedMenuItem_Checked" Tag="0.25"></MenuItem>
+                        <MenuItem Name="speed0_5HzMenuItem" IsCheckable="True" Header="0.5 Hz" Checked="speedMenuItem_Checked" Tag="0.5"></MenuItem>
+                        <MenuItem Name="speed1HzMenuItem" IsCheckable="True" Header="1 Hz" Checked="speedMenuItem_Checked" Tag="1"></MenuItem>
+                        <MenuItem Name="speed2HzMenuItem" IsCheckable="True" Header="2 Hz" Checked="speedMenuItem_Checked" Tag="2"></MenuItem>
+                        <MenuItem Name="speed4HzMenuItem" IsCheckable="True" Header="4 Hz" Checked="speedMenuItem_Checked" Tag="4"></MenuItem>
+                        <MenuItem Name="speedRealTimeItem" IsCheckable="True" Header="Real Time" Checked="speedMenuItem_Checked" Tag="5"></MenuItem>
+                    </MenuItem>
+                </MenuItem>
+            </Menu>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="White" Grid.Row="1">
+            <ToolBarPanel Orientation="Horizontal">
+                <ToolBar Band="1" BandIndex="1">
+                    <Button Name="programPauseButton" Background="Gray" Margin="2" Padding="2" Click="programPauseButton_Click">Pause</Button>
+                    <Button Name="programResumeButton" Background="Gray" Margin="2" Padding="2" Click="programResumeButton_Click">Resume</Button>
+                </ToolBar>
+                <ToolBar Band="2" BandIndex="2">
+                    <Button Name="programRestartButton" Background="Gray" Margin="2" Padding="2" Click="programRestartButton_Click">Restart</Button>
+                </ToolBar>
+            </ToolBarPanel>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="White" Grid.Row="2">
+            <local:VM_Screen x:Name="screen" Width="960"  Height="840"></local:VM_Screen>
+        </Border>
         <local:VM_Memory x:Name="memory" Grid.Row="1"></local:VM_Memory>
         <local:VM_CPU x:Name="cpu" Grid.Row="1"></local:VM_CPU>
-        <StackPanel Orientation="Horizontal" Grid.Row="2">
-            <Label Height="Auto" Content="Register Status:"></Label>
-            <Label Name="registerStatusLabel" Height="Auto" HorizontalContentAlignment="Left"></Label>
-        </StackPanel>
+        <Grid Grid.Row="3">
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <Border BorderThickness="1" BorderBrush="White" Grid.Row="0" Grid.Column="0">
+                <Label Height="Auto" Content="Register Status" HorizontalContentAlignment="Right" Background="Gray"></Label>
+            </Border>
+            <Border BorderThickness="1" BorderBrush="White" Grid.Row="0" Grid.Column="1">
+                <Label Name="registerStatusLabel" Height="Auto" HorizontalContentAlignment="Left" Background="DarkKhaki"></Label>
+            </Border>
+            
+            <Border BorderThickness="1" BorderBrush="White" Grid.Row="1" Grid.Column="0">
+                <Label Height="Auto" Content="Machine Status" HorizontalContentAlignment="Right" Background="Gray"></Label>
+            </Border>
+            <Border BorderThickness="1" BorderBrush="White" Grid.Row="1" Grid.Column="1">
+                <Label Name="machineStatusLabel" Height="Auto" HorizontalContentAlignment="Left" Background="DarkSalmon"></Label>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

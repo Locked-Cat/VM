@@ -36,7 +36,7 @@ namespace VM
             }
         }
 
-        public delegate void ScreenUpdateEventHandler(object sender, EventArgs args);
+        public delegate void ScreenUpdateEventHandler();
         public event ScreenUpdateEventHandler ScreenUpdateEvent;
 
         static public UInt16 MemorySize
@@ -53,6 +53,12 @@ namespace VM
         public VM_Memory()
         {
             InitializeComponent();
+        }
+
+        public void Reset()
+        {
+            for (UInt16 i = 0; i < MemorySize; ++i)
+                this[i] = 0;
         }
 
         public byte this[UInt16 addr]
@@ -72,7 +78,8 @@ namespace VM
 
                 memory[addr] = value;
                 if (addr >= VideoMemoryStartAddr && addr < VideoMemoryStartAddr + VideoMemorySize)
-                    ScreenUpdateEvent(this, EventArgs.Empty);
+                    if (ScreenUpdateEvent != null)
+                        ScreenUpdateEvent();
             }
         }
 

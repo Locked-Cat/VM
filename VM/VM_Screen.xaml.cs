@@ -33,18 +33,19 @@ namespace VM
             InitializeComponent();
         }
 
-        public void InitializeVideoMemory(VM_Memory memory)
+        public void BindingMemory(VM_Memory memory)
+        {
+            this.memory = memory;
+        }
+
+        public void Reset()
         {
             Debug.Assert(memory != null);
-            if (this.memory == null)        //called for only once
-            {
-                this.memory = memory;
 
-                for (var i = VM_Memory.VideoMemoryStartAddr; i < VM_Memory.VideoMemoryStartAddr + VM_Memory.VideoMemorySize; i += 2)
-                {
-                    this.memory[i] = 32;
-                    this.memory[(UInt16)(i + 1)] = 7;
-                }
+            for (var i = VM_Memory.VideoMemoryStartAddr; i < VM_Memory.VideoMemoryStartAddr + VM_Memory.VideoMemorySize; i += 2)
+            {
+                this.memory[i] = 32;
+                this.memory[(UInt16)(i + 1)] = 7;
             }
         }
 

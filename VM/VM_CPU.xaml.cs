@@ -4,13 +4,67 @@ using System.Diagnostics;
 
 namespace VM
 {
+    public enum Register
+    {
+        UNKNOWN = 0,
+        AL = 1,
+        AH = 2,
+        A = 4,
+        B = 8,
+        C = 16,
+        D = 32
+    }
+
+    public enum CPUStatus
+    {
+        Running,
+        Stop,
+        Pause
+    }
+
     /// <summary>
     /// VM_CPU.xaml 的交互逻辑
     /// </summary>
     public partial class VM_CPU : UserControl
     {
-        public delegate void RegisterStatusUpdateEventHandler(object sender, EventArgs args);
+        public delegate void RegisterStatusUpdateEventHandler();
         public event RegisterStatusUpdateEventHandler RegisterStatusUpdateEvent;
+
+        public delegate void CPUSpeedUpdateEventHandler();
+        public event CPUSpeedUpdateEventHandler CPUSpeedUpdateEvent;
+
+        public delegate void CPURunningChangedEventHandler();
+        public event CPURunningChangedEventHandler CPURunningChangedEvent;
+
+        private int speed;
+        public int Speed
+        {
+            get
+            {
+                return speed;
+            }
+            set
+            {
+                speed = value;
+                if (CPUSpeedUpdateEvent != null)
+                    CPUSpeedUpdateEvent();
+            }
+        }
+
+        private CPUStatus running;
+        public CPUStatus Running
+        {
+            get
+            {
+                return running;
+            }
+            set
+            {
+                running = value;
+                if (CPURunningChangedEvent != null)
+                    CPURunningChangedEvent();
+            }
+        }
 
         private byte al;
         private byte ah;
@@ -110,26 +164,30 @@ namespace VM
             }
         }
 
-        public void InitializeRegister()
+        public void Reset()
         {
             AH = AL = 0;
             A = B = C = D = 0;
             Flags = 0;
             InstructionPointer = 0;
-            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+            if (RegisterStatusUpdateEvent != null)
+                RegisterStatusUpdateEvent();
         }
 
-        public void ExecuteProgram(UInt16 programPosition)
+        public void ExecuteProgram(UInt16 programPosition, System.Threading.ManualResetEvent pauseEvent)
         {
             Debug.Assert(memory != null);
 
             InstructionPointer = programPosition;
             bool isProgramEnd = false;
 
+            Running = CPUStatus.Running;
             while (!isProgramEnd)
             {
                 var instruction = memory[InstructionPointer];
                 ++InstructionPointer;
+                System.Threading.Thread.Sleep(Speed);
+                pauseEvent.WaitOne(System.Threading.Timeout.Infinite);
 
                 switch (instruction)
                 {
@@ -140,7 +198,8 @@ namespace VM
                             var fromAddress = System.BitConverter.ToUInt16(bytes, 0);
                             InstructionPointer += 3;
                             MemoryToRegister(registerID, fromAddress);
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x02:      //STT VALUE R
@@ -183,7 +242,8 @@ namespace VM
                                 }
                             }
                             InstructionPointer += 3;
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x04:      //END ADDR
@@ -206,7 +266,8 @@ namespace VM
                                 Flags = (byte)(Flags | 8);
 
                             InstructionPointer += 4;
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x0d:      //CMP V R
@@ -248,7 +309,8 @@ namespace VM
                                 Flags = (byte)(Flags | 8);
 
                             InstructionPointer += 3;
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x0e:      //CMP R V
@@ -290,7 +352,8 @@ namespace VM
                                 Flags = (byte)(Flags | 8);
 
                             InstructionPointer += 3;
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x0f:      //CMP R R
@@ -356,7 +419,8 @@ namespace VM
                                 Flags = (byte)(Flags | 8);
 
                             InstructionPointer += 4;
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x05:      //JMP ADDR
@@ -369,7 +433,8 @@ namespace VM
                             else
                                 InstructionPointer -= absAddr;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x06:      //JLE ADDR
@@ -387,7 +452,8 @@ namespace VM
                             else
                                 InstructionPointer += 2;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x07:      //JL ADDR
@@ -405,7 +471,8 @@ namespace VM
                             else
                                 InstructionPointer += 2;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x08:      //JGE ADDR
@@ -423,7 +490,8 @@ namespace VM
                             else
                                 InstructionPointer += 2;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x09:      //JG ADDR
@@ -441,7 +509,8 @@ namespace VM
                             else
                                 InstructionPointer += 2;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x0a:      //JE ADDR
@@ -459,7 +528,8 @@ namespace VM
                             else
                                 InstructionPointer += 2;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                     case 0x0b:      //JNE ADDR
@@ -477,11 +547,13 @@ namespace VM
                             else
                                 InstructionPointer += 2;
 
-                            RegisterStatusUpdateEvent(this, EventArgs.Empty);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
                             break;
                         }
                 }
             }
+            Running = CPUStatus.Stop;
         }
 
         private void RegisterToMemory(Register registerID, UInt16 toAddress)
