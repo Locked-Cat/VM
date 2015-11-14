@@ -44,8 +44,8 @@ namespace VM
 
             for (var i = VM_Memory.VideoMemoryStartAddr; i < VM_Memory.VideoMemoryStartAddr + VM_Memory.VideoMemorySize; i += 2)
             {
-                this.memory[i] = 32;
-                this.memory[(UInt16)(i + 1)] = 7;
+                memory[i] = 32;
+                memory[(UInt16)(i + 1)] = 7;
             }
         }
 
