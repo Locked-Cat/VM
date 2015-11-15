@@ -44,10 +44,8 @@
             </ToolBarPanel>
         </Border>
         <Border BorderThickness="1" BorderBrush="White" Grid.Row="2">
-            <local:VM_Screen x:Name="screen" Width="960"  Height="840"></local:VM_Screen>
+            <local:VM_Screen x:Name="screen" Width="960"  Height="720"></local:VM_Screen>
         </Border>
-        <local:VM_Memory x:Name="memory" Grid.Row="1"></local:VM_Memory>
-        <local:VM_CPU x:Name="cpu" Grid.Row="1"></local:VM_CPU>
         <Grid Grid.Row="3">
             <Grid.RowDefinitions>
                 <RowDefinition></RowDefinition>

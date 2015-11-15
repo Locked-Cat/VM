@@ -18,10 +18,15 @@ namespace VM
         private UInt16 programPosition;
         private string programFileName;
 
+        private VM_CPU cpu;
+        private VM_Memory memory;
+        private VM_BIOS bios;
+
         public VM_Machine()
         {
             InitializeComponent();
 
+            memory = new VM_Memory();
             memory.ScreenUpdateEvent += () => 
             {
                 screen.Dispatcher.Invoke(()=>
@@ -30,6 +35,9 @@ namespace VM
                 });
             };
 
+            screen.BindingMemory(memory);
+
+            cpu = new VM_CPU(memory);
             cpu.RegisterStatusUpdateEvent += () =>
             {
                 var registerStatus = string.Empty;
@@ -48,7 +56,6 @@ namespace VM
                     registerStatusLabel.Content = registerStatus;
                 });
             };
-
             cpu.CPUSpeedUpdateEvent += ChangeMachineStatusLabel;
             cpu.CPURunningChangedEvent += ChangeMachineStatusLabel;
             cpu.CPURunningChangedEvent += () =>
@@ -77,11 +84,8 @@ namespace VM
 
             };
 
-            memory.Reset();
-            cpu.BindingMemory(memory);
-            cpu.Reset();
-            screen.BindingMemory(memory);
-            screen.Reset();
+            bios = new VM_BIOS(cpu, memory, screen);
+            bios.Reset();
 
             cpu.Running = CPUStatus.Stop;
             programRestartButton.IsEnabled = false;
@@ -123,7 +127,7 @@ namespace VM
             var position = binaryReader.ReadUInt16();          //where the program starts in memory
 
             ushort i = 0;
-            while (binaryReader.PeekChar() != -1)
+            while (binaryReader.BaseStream.Position < binaryReader.BaseStream.Length)
             {
                 memory[(UInt16)(position + i)] = binaryReader.ReadByte();
                 ++i;
@@ -143,24 +147,14 @@ namespace VM
             openFileDialog.Filter = "VM Binary File|*.vmbin";
             openFileDialog.FileName = string.Empty;
 
-            if(openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
                 return;
 
             programFileName = openFileDialog.FileName;
 
-            lock (memory)
+            lock (bios)
             {
-                memory.Reset();
-            }
-
-            lock(cpu)
-            {
-                cpu.Reset();
-            }
-
-            lock(screen)
-            {
-                screen.Reset();
+                bios.Reset();
             }
 
             LoadProgram();
@@ -191,26 +185,29 @@ namespace VM
                 }
             }
 
-            switch (current.Tag as string)
+            lock(cpu.mutexSpeed)
             {
-                case "0.25":
-                    cpu.Speed = 4000;
-                    break;
-                case "0.5":
-                    cpu.Speed = 2000;
-                    break;
-                case "1":
-                    cpu.Speed = 1000;
-                    break;
-                case "2":
-                    cpu.Speed = 500;
-                    break;
-                case "4":
-                    cpu.Speed = 250;
-                    break;
-                case "5":
-                    cpu.Speed = 0;
-                    break;
+                switch (current.Tag as string)
+                {
+                    case "0.25":
+                        cpu.Speed = 4000;
+                        break;
+                    case "0.5":
+                        cpu.Speed = 2000;
+                        break;
+                    case "1":
+                        cpu.Speed = 1000;
+                        break;
+                    case "2":
+                        cpu.Speed = 500;
+                        break;
+                    case "4":
+                        cpu.Speed = 250;
+                        break;
+                    case "5":
+                        cpu.Speed = 0;
+                        break;
+                }
             }
         }
 
@@ -234,19 +231,9 @@ namespace VM
                 program = null;
             }
 
-            lock (memory)
+            lock(bios)
             {
-                memory.Reset();
-            }
-
-            lock (cpu)
-            {
-                cpu.Reset();
-            }
-
-            lock (screen)
-            {
-                screen.Reset();
+                bios.Reset();
             }
 
             LoadProgram();

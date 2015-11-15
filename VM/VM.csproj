@@ -57,19 +57,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="VM_CPU.xaml.cs">
-      <DependentUpon>VM_CPU.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="VM_Memory.xaml.cs">
-      <DependentUpon>VM_Memory.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="IHardware.cs" />
+    <Compile Include="VM_BIOS.cs" />
+    <Compile Include="VM_CPU.cs" />
+    <Compile Include="VM_Memory.cs" />
     <Compile Include="VM_Screen.xaml.cs">
       <DependentUpon>VM_Screen.xaml</DependentUpon>
     </Compile>
-    <Page Include="VM_CPU.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="VM_Machine.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -82,10 +76,6 @@
       <DependentUpon>VM_Machine.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="VM_Memory.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="VM_Screen.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

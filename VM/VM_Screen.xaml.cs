@@ -12,19 +12,19 @@ namespace VM
     /// VM_Screen.xaml 的交互逻辑
     /// </summary>
 
-    public partial class VM_Screen : UserControl
+    public partial class VM_Screen : UserControl, IHardware
     {
         static public ushort CharsXAxis
         { get; } = 80;
 
         static public ushort CharsYAxis
-        { get; } = 60;
+        { get; } = 36;
 
         static public ushort ScreenWidth
         { get; } = (ushort)(CharsXAxis * 12);
 
         static public ushort ScreenHeight
-        { get; } = (ushort)(CharsYAxis * 14);
+        { get; } = (ushort)(CharsYAxis * 20);
 
         private VM_Memory memory;
 
@@ -40,8 +40,6 @@ namespace VM
 
         public void Reset()
         {
-            Debug.Assert(memory != null);
-
             for (var i = VM_Memory.VideoMemoryStartAddr; i < VM_Memory.VideoMemoryStartAddr + VM_Memory.VideoMemorySize; i += 2)
             {
                 memory[i] = 32;
@@ -182,15 +180,15 @@ namespace VM
 
                 if ((xLoc % 960) == 0 && (xLoc != 0))
                 {
-                    yLoc += 14;
+                    yLoc += 20;
                     xLoc = 0;
                 }
 
                 byte[] letter = { memory[i] };
                 var s = System.Text.Encoding.ASCII.GetString(letter);
-                var pf = new PointF(xLoc - 2, yLoc - 4);
+                var pf = new PointF(xLoc - 2, yLoc - 3);
 
-                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 12f, 14f);
+                bitmapGraphics.FillRectangle(backgroundBrush, xLoc, yLoc, 12f, 20f);
                 bitmapGraphics.DrawString(s, font, foregroundBrush, pf);
                 xLoc += 12;
             }

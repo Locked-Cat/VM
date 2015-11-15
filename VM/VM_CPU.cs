@@ -1,5 +1,8 @@
 ﻿using System;
-using System.Windows.Controls;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace VM
@@ -22,10 +25,7 @@ namespace VM
         Pause
     }
 
-    /// <summary>
-    /// VM_CPU.xaml 的交互逻辑
-    /// </summary>
-    public partial class VM_CPU : UserControl
+    public partial class VM_CPU: IHardware
     {
         public delegate void RegisterStatusUpdateEventHandler();
         public event RegisterStatusUpdateEventHandler RegisterStatusUpdateEvent;
@@ -36,6 +36,7 @@ namespace VM
         public delegate void CPURunningChangedEventHandler();
         public event CPURunningChangedEventHandler CPURunningChangedEvent;
 
+        public object mutexSpeed = new object();
         private int speed;
         public int Speed
         {
@@ -150,18 +151,9 @@ namespace VM
 
         private VM_Memory memory;
 
-        public VM_CPU()
+        public VM_CPU(VM_Memory memory)
         {
-            InitializeComponent();
-        }
-
-        public void BindingMemory(VM_Memory memory)
-        {
-            if (this.memory == null)
-            {
-                Debug.Assert(memory != null);
-                this.memory = memory;
-            }
+            this.memory = memory;
         }
 
         public void Reset()
@@ -186,12 +178,15 @@ namespace VM
             {
                 var instruction = memory[InstructionPointer];
                 ++InstructionPointer;
-                System.Threading.Thread.Sleep(Speed);
+                lock(mutexSpeed)
+                {
+                    System.Threading.Thread.Sleep(Speed);
+                }
                 pauseEvent.WaitOne(System.Threading.Timeout.Infinite);
 
                 switch (instruction)
                 {
-                    case 0x01:      //LDT R VALUE
+                    case 0x01:      //LDT R V
                         {
                             var registerID = (Register)memory[InstructionPointer];
                             var bytes = new byte[] { memory[(UInt16)(InstructionPointer + 1)], memory[(UInt16)(InstructionPointer + 2)] };
@@ -202,7 +197,18 @@ namespace VM
                                 RegisterStatusUpdateEvent();
                             break;
                         }
-                    case 0x02:      //STT VALUE R
+                    case 0x28:      //LDR R R
+                        {
+                            var leftRegisterID = (Register)memory[InstructionPointer];
+                            var rightRegisterID = (Register)memory[(UInt16)(InstructionPointer + 1)];
+                            UInt16 fromAddress = ReadFromRegister(rightRegisterID);
+                            InstructionPointer += 2;
+                            MemoryToRegister(leftRegisterID, fromAddress);
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
+                            break;
+                        }
+                    case 0x02:      //STT V R
                         {
                             var bytes = new byte[] { memory[(UInt16)(InstructionPointer)], memory[(UInt16)(InstructionPointer + 1)] };
                             var toAddress = System.BitConverter.ToUInt16(bytes, 0);
@@ -211,7 +217,16 @@ namespace VM
                             RegisterToMemory(registerID, toAddress);
                             break;
                         }
-                    case 0x03:      //SET R VALUE
+                    case 0x27:      //STT R R
+                        {
+                            var leftRegisterID = (Register)memory[InstructionPointer];
+                            var rightRegisterID = (Register)memory[(UInt16)(InstructionPointer + 1)];
+                            UInt16 toAddress = ReadFromRegister(leftRegisterID);
+                            InstructionPointer += 2;
+                            RegisterToMemory(rightRegisterID, toAddress);
+                            break;
+                        }
+                    case 0x03:      //SET R V
                         {
                             var registerID = (Register)memory[InstructionPointer];
                             if (registerID == Register.AH || registerID == Register.AL)
@@ -225,21 +240,7 @@ namespace VM
                             {
                                 var bytes = new byte[] { memory[(UInt16)(InstructionPointer + 1)], memory[(UInt16)(InstructionPointer + 2)] };
                                 var value = System.BitConverter.ToUInt16(bytes, 0);
-                                switch (registerID)
-                                {
-                                    case Register.A:
-                                        A = value;
-                                        break;
-                                    case Register.B:
-                                        B = value;
-                                        break;
-                                    case Register.C:
-                                        C = value;
-                                        break;
-                                    case Register.D:
-                                        D = value;
-                                        break;
-                                }
+                                SetToRegister(registerID, value);
                             }
                             InstructionPointer += 3;
                             if (RegisterStatusUpdateEvent != null)
@@ -275,28 +276,7 @@ namespace VM
                             var leftValue = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0);
                             var registerID = (Register)memory[(UInt16)(InstructionPointer + 2)];
 
-                            UInt16 rightValue = 0;
-                            switch (registerID)
-                            {
-                                case Register.AH:
-                                    rightValue = AH;
-                                    break;
-                                case Register.AL:
-                                    rightValue = AL;
-                                    break;
-                                case Register.A:
-                                    rightValue = A;
-                                    break;
-                                case Register.B:
-                                    rightValue = B;
-                                    break;
-                                case Register.C:
-                                    rightValue = C;
-                                    break;
-                                case Register.D:
-                                    rightValue = D;
-                                    break;
-                            }
+                            UInt16 rightValue = ReadFromRegister(registerID);
 
                             Flags = 0;
                             if (leftValue == rightValue)
@@ -315,31 +295,10 @@ namespace VM
                         }
                     case 0x0e:      //CMP R V
                         {
-                            var registerID = (Register)memory[(UInt16)(InstructionPointer + 2)];
-                            var rightValue = System.BitConverter.ToUInt16(memory.Segment(InstructionPointer, (UInt16)(InstructionPointer + 2)), 0); ;
+                            var registerID = (Register)memory[(UInt16)(InstructionPointer)];
+                            var rightValue = System.BitConverter.ToUInt16(memory.Segment((UInt16)(InstructionPointer + 1), (UInt16)(InstructionPointer + 3)), 0); ;
 
-                            UInt16 leftValue = 0;
-                            switch (registerID)
-                            {
-                                case Register.AH:
-                                    leftValue = AH;
-                                    break;
-                                case Register.AL:
-                                    leftValue = AL;
-                                    break;
-                                case Register.A:
-                                    leftValue = A;
-                                    break;
-                                case Register.B:
-                                    leftValue = B;
-                                    break;
-                                case Register.C:
-                                    leftValue = C;
-                                    break;
-                                case Register.D:
-                                    leftValue = D;
-                                    break;
-                            }
+                            UInt16 leftValue = ReadFromRegister(registerID);
 
                             Flags = 0;
                             if (leftValue == rightValue)
@@ -361,52 +320,8 @@ namespace VM
                             var leftRegisterID = (Register)memory[InstructionPointer];
                             var rightRegisterID = (Register)memory[(UInt16)(InstructionPointer + 1)];
 
-                            UInt16 leftValue = 0;
-                            UInt16 rightValue = 0;
-
-                            switch (leftRegisterID)
-                            {
-                                case Register.AH:
-                                    leftValue = AH;
-                                    break;
-                                case Register.AL:
-                                    leftValue = AL;
-                                    break;
-                                case Register.A:
-                                    leftValue = A;
-                                    break;
-                                case Register.B:
-                                    leftValue = B;
-                                    break;
-                                case Register.C:
-                                    leftValue = C;
-                                    break;
-                                case Register.D:
-                                    leftValue = D;
-                                    break;
-                            }
-
-                            switch (rightRegisterID)
-                            {
-                                case Register.AH:
-                                    rightValue = AH;
-                                    break;
-                                case Register.AL:
-                                    rightValue = AL;
-                                    break;
-                                case Register.A:
-                                    rightValue = A;
-                                    break;
-                                case Register.B:
-                                    rightValue = B;
-                                    break;
-                                case Register.C:
-                                    rightValue = C;
-                                    break;
-                                case Register.D:
-                                    rightValue = D;
-                                    break;
-                            }
+                            var leftValue = ReadFromRegister(leftRegisterID);
+                            var rightValue = ReadFromRegister(rightRegisterID);
 
                             Flags = 0;
                             if (leftValue == rightValue)
@@ -551,9 +466,94 @@ namespace VM
                                 RegisterStatusUpdateEvent();
                             break;
                         }
+                    case 0x11:      //ADD R V
+                        {
+                            var leftRegisterID = (Register)memory[InstructionPointer];
+
+                            var leftOperand = ReadFromRegister(leftRegisterID);
+                            var rightOperand = System.BitConverter.ToUInt16(memory.Segment((UInt16)(InstructionPointer + 1), (UInt16)(InstructionPointer + 3)), 0);
+                            var result = leftOperand + rightOperand;
+
+                            if (leftRegisterID == Register.AH || leftRegisterID == Register.AL)
+                            {
+                                if (result > 0xff)
+                                    Flags = (byte)(Flags | 16);
+                                SetToRegister(leftRegisterID, (byte)result);
+                            }
+                            else
+                            {
+                                if (result > 0xffff)
+                                    Flags = (byte)(Flags | 16);
+                                SetToRegister(leftRegisterID, (UInt16)result);
+                            }
+
+                            InstructionPointer += 3;
+                            if (RegisterStatusUpdateEvent != null)
+                                RegisterStatusUpdateEvent();
+                            break;
+                        }
+                    default:
+                        throw new NotImplementedException();
                 }
             }
             Running = CPUStatus.Stop;
+        }
+
+        private UInt16 ReadFromRegister(Register registerID)
+        {
+            switch (registerID)
+            {
+                case Register.AH:
+                    return AH;
+                case Register.AL:
+                    return AL;
+                case Register.A:
+                    return A;
+                case Register.B:
+                    return B;
+                case Register.C:
+                    return C;
+                case Register.D:
+                    return D;
+                default:
+                    return 0;
+            }
+        }
+
+        private void SetToRegister(Register registerID, byte value)
+        {
+            Debug.Assert(registerID == Register.AH || registerID == Register.AL);
+
+            switch (registerID)
+            {
+                case Register.AH:
+                    AH = value;
+                    break;
+                case Register.AL:
+                    AL = value;
+                    break;
+            }
+        }
+
+        private void SetToRegister(Register registerID, UInt16 value)
+        {
+            Debug.Assert(registerID != Register.AH && registerID != Register.AL);
+
+            switch (registerID)
+            {
+                case Register.A:
+                    A = value;
+                    break;
+                case Register.B:
+                    B = value;
+                    break;
+                case Register.C:
+                    C = value;
+                    break;
+                case Register.D:
+                    D = value;
+                    break;
+            }
         }
 
         private void RegisterToMemory(Register registerID, UInt16 toAddress)

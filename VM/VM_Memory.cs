@@ -3,23 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Diagnostics;
 
 namespace VM
 {
-    /// <summary>
-    /// VM_Memory.xaml 的交互逻辑
-    /// </summary>
-    public partial class VM_Memory : UserControl
+    public class VM_Memory: IHardware
     {
         public class MemoryAddressIllegalException : Exception
         {
@@ -48,17 +36,17 @@ namespace VM
         static public UInt16 VideoMemoryStartAddr
         { get; } = 0xa000;
 
-        private byte[] memory = new byte[MemorySize];
+        private byte[] memory; 
 
         public VM_Memory()
         {
-            InitializeComponent();
+            memory = new byte[MemorySize];
         }
 
         public void Reset()
         {
             for (UInt16 i = 0; i < MemorySize; ++i)
-                this[i] = 0;
+                memory[i] = 0;
         }
 
         public byte this[UInt16 addr]
@@ -94,7 +82,7 @@ namespace VM
             for (var i = firstAddr; i < lastAddr; ++i)
                 ret[i - firstAddr] = memory[i];
 
-            return ret; 
+            return ret;
         }
     }
 }
